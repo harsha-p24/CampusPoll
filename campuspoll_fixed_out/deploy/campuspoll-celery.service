@@ -1,0 +1,21 @@
+# Systemd service for Celery worker
+# Place at: /etc/systemd/system/campuspoll-celery.service
+
+[Unit]
+Description=CampusPoll Celery Worker
+After=network.target redis.service
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/campuspoll
+EnvironmentFile=/var/www/campuspoll/.env
+ExecStart=/var/www/campuspoll/venv/bin/celery \
+    -A celery_app.celery worker \
+    --loglevel=info \
+    --logfile=/var/log/campuspoll/celery.log
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /analytics/
+Disallow: /notifications/
+Disallow: /health
+Allow: /
+Sitemap: https://your-domain.com/sitemap.xml

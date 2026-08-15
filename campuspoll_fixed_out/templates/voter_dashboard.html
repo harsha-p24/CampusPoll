@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - CampusPoll{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>Welcome, {{ current_user.name }} 👋</h2>
+    <p>{{ current_user.department }} | {{ current_user.year }} | ID: {{ current_user.student_id }}</p>
+</div>
+
+<div class="election-search">
+    <form method="GET" style="display:flex;gap:8px;flex:1;">
+        <input type="text" name="q" value="{{ search }}" placeholder="Search elections...">
+        <button type="submit" class="btn btn-small">Search</button>
+        {% if search %}<a href="{{ url_for('voter.dashboard') }}" class="btn btn-small btn-outline">Clear</a>{% endif %}
+    </form>
+</div>
+
+<h3>Elections</h3>
+{% if elections %}
+<div class="election-list">
+{% for election in elections %}
+{% set live = election.live_status %}
+{% set voting_open = live == 'voting' %}
+{% set nom_open = live == 'nomination' %}
+<div class="election-card" data-election-id="{{ election.id }}"
+     data-voting-start="{{ election.voting_start.isoformat() }}"
+     data-voting-end="{{ election.voting_end.isoformat() }}"
+     data-results-published="{{ election.results_published|lower }}">
+    <div class="election-header">
+        <h4>{{ election.title }}</h4>
+        <span class="badge badge-{{ live }}">{{ live.upper() }}</span>
+    </div>
+    <p class="election-position">Position: <strong>{{ election.position }}</strong></p>
+
+    {% if nom_open %}
+        <div class="status-banner banner-nomination">📝 Nominations open until {{ election.nomination_end.strftime('%d %b %Y %H:%M') }}</div>
+    {% elif voting_open %}
+        <div class="status-banner banner-voting">🗳️ Voting OPEN — closes {{ election.voting_end.strftime('%d %b %Y %H:%M') }}
+            <span class="countdown" data-end="{{ election.voting_end.isoformat() }}" data-mode="closes"></span>
+        </div>
+    {% elif live == 'closed' %}
+        <div class="status-banner banner-closed">🔒 Voting Closed — results pending announcement</div>
+    {% elif live == 'completed' %}
+        <div class="status-banner banner-closed">🔒 Voting Closed — results announced</div>
+    {% else %}
+        <div class="status-banner banner-upcoming">⏳ Upcoming — voting opens {{ election.voting_start.strftime('%d %b %Y %H:%M') }}
+            <span class="countdown" data-end="{{ election.voting_start.isoformat() }}" data-mode="opens"></span>
+        </div>
+    {% endif %}
+
+    <div class="election-actions">
+        {% if election.id in voted_ids %}
+            <span class="voted-badge">✅ Voted</span>
+            {% if election.results_published %}
+                <a href="{{ url_for('voter.results', election_id=election.id) }}" class="btn btn-small">View Results</a>
+            {% else %}
+                <span class="hint-text">Results have not been announced yet.</span>
+            {% endif %}
+        {% elif voting_open %}
+            <a href="{{ url_for('voter.election_detail', election_id=election.id) }}" class="btn btn-small">Vote Now</a>
+        {% elif election.results_published %}
+            <a href="{{ url_for('voter.results', election_id=election.id) }}" class="btn btn-small">View Results</a>
+        {% else %}
+            <a href="{{ url_for('voter.election_detail', election_id=election.id) }}" class="btn btn-small btn-outline">View Details</a>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="empty-state">{{ 'No elections match your search.' if search else 'No elections available at the moment.' }}</div>
+{% endif %}
+{% endblock %}

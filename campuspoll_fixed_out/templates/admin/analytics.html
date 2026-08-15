@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Analytics - Admin{% endblock %}
+{% block content %}
+<div class="page-header">
+    <a href="{{ url_for('admin.dashboard') }}" class="back-link">← Back</a>
+    <h2>Analytics Dashboard</h2>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-num">{{ total_users }}</div>
+        <div class="stat-label">Total Voters</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-num">{{ total_votes }}</div>
+        <div class="stat-label">Total Votes</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-num">{{ total_events }}</div>
+        <div class="stat-label">Tracked Events</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-num">{{ login_failures }}</div>
+        <div class="stat-label">Failed Logins</div>
+    </div>
+</div>
+
+<div class="analytics-grid">
+    <!-- Voter Turnout per Election -->
+    <div class="chart-box">
+        <h3>Voter Turnout per Election</h3>
+        <canvas id="turnoutChart"></canvas>
+        <table class="simple-table" style="margin-top:10px;">
+            <thead><tr><th>Election</th><th>Voted</th><th>Turnout %</th></tr></thead>
+            <tbody>
+                {% for t in turnout_data %}
+                <tr>
+                    <td>{{ t.title }}</td>
+                    <td>{{ t.voted }} / {{ t.total }}</td>
+                    <td>{{ t.pct }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Page Views -->
+    <div class="chart-box">
+        <h3>Top Pages Visited</h3>
+        <canvas id="pageViewsChart"></canvas>
+    </div>
+
+    <!-- Votes Over Time -->
+    <div class="chart-box">
+        <h3>Votes Over Time (Last 7 Days)</h3>
+        <canvas id="votesTimeChart"></canvas>
+    </div>
+
+    <!-- Daily Signups -->
+    <div class="chart-box">
+        <h3>Daily Signups (Last 7 Days)</h3>
+        <canvas id="signupsChart"></canvas>
+    </div>
+
+    <!-- Dept-wise voters -->
+    <div class="chart-box">
+        <h3>Department-wise Voter Distribution</h3>
+        <canvas id="deptChart"></canvas>
+    </div>
+
+    <!-- Event Types -->
+    <div class="chart-box">
+        <h3>User Behavior Events</h3>
+        <canvas id="eventsChart"></canvas>
+    </div>
+</div>
+
+<!-- Login Stats -->
+<div class="chart-box">
+    <h3>Login Performance</h3>
+    <p>✅ Successful Logins: <strong>{{ login_success }}</strong> &nbsp;&nbsp;
+       ❌ Failed Logins: <strong>{{ login_failures }}</strong></p>
+    {% if login_success + login_failures > 0 %}
+    <div class="vote-bar-bg" style="max-width:400px;">
+        <div class="vote-bar vote-bar-green" style="width:{{ (login_success/(login_success+login_failures)*100)|round }}%"></div>
+    </div>
+    <p>Success Rate: {{ ((login_success/(login_success+login_failures))*100)|round(1) }}%</p>
+    {% endif %}
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const COLORS = ['#4a90a4','#7ab3bf','#a8d1d9','#d0eaee','#5b7fa6','#8ca9c9','#b5cce0'];
+
+// Turnout
+new Chart(document.getElementById('turnoutChart'), {
+    type: 'bar',
+    data: {
+        labels: [{% for t in turnout_data %}'{{ t.title }}'{% if not loop.last %},{% endif %}{% endfor %}],
+        datasets: [{label:'Turnout %', data:[{% for t in turnout_data %}{{ t.pct }}{% if not loop.last %},{% endif %}{% endfor %}], backgroundColor:'#4a90a4'}]
+    },
+    options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,max:100}} }
+});
+
+// Page Views
+new Chart(document.getElementById('pageViewsChart'), {
+    type: 'bar',
+    data: {
+        labels: [{% for p in page_views %}'{{ p.page }}'{% if not loop.last %},{% endif %}{% endfor %}],
+        datasets: [{label:'Views', data:[{% for p in page_views %}{{ p.count }}{% if not loop.last %},{% endif %}{% endfor %}], backgroundColor:'#7ab3bf'}]
+    },
+    options: { indexAxis:'y', responsive:true, plugins:{legend:{display:false}} }
+});
+
+// Votes over time
+new Chart(document.getElementById('votesTimeChart'), {
+    type: 'line',
+    data: {
+        labels: [{% for v in votes_over_time %}'{{ v.date }}'{% if not loop.last %},{% endif %}{% endfor %}],
+        datasets: [{label:'Votes', data:[{% for v in votes_over_time %}{{ v.count }}{% if not loop.last %},{% endif %}{% endfor %}], borderColor:'#4a90a4', fill:true, backgroundColor:'rgba(74,144,164,0.1)'}]
+    },
+    options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1}}} }
+});
+
+// Daily signups
+new Chart(document.getElementById('signupsChart'), {
+    type: 'line',
+    data: {
+        labels: [{% for s in daily_signups %}'{{ s.date }}'{% if not loop.last %},{% endif %}{% endfor %}],
+        datasets: [{label:'Signups', data:[{% for s in daily_signups %}{{ s.count }}{% if not loop.last %},{% endif %}{% endfor %}], borderColor:'#5b7fa6', fill:true, backgroundColor:'rgba(91,127,166,0.1)'}]
+    },
+    options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1}}} }
+});
+
+// Department pie
+new Chart(document.getElementById('deptChart'), {
+    type: 'doughnut',
+    data: {
+        labels: [{% for d in dept_stats %}'{{ d.department }}'{% if not loop.last %},{% endif %}{% endfor %}],
+        datasets: [{data:[{% for d in dept_stats %}{{ d.total }}{% if not loop.last %},{% endif %}{% endfor %}], backgroundColor:COLORS}]
+    },
+    options: { responsive:true }
+});
+
+// Event types
+new Chart(document.getElementById('eventsChart'), {
+    type: 'bar',
+    data: {
+        labels: [{% for e in event_types %}'{{ e.event_type }}'{% if not loop.last %},{% endif %}{% endfor %}],
+        datasets: [{label:'Count', data:[{% for e in event_types %}{{ e.count }}{% if not loop.last %},{% endif %}{% endfor %}], backgroundColor:'#a8d1d9'}]
+    },
+    options: { indexAxis:'y', responsive:true, plugins:{legend:{display:false}} }
+});
+</script>
+{% endblock %}

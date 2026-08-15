@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Apply for Nomination - CampusPoll{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>Candidate Nominations</h2>
+    <p>Apply to contest in an election during the nomination period.</p>
+</div>
+
+<h3>Open for Nominations</h3>
+{% if open_elections %}
+<div class="election-list">
+    {% for election in open_elections %}
+    <div class="election-card">
+        <div class="election-header">
+            <h4>{{ election.title }}</h4>
+            <span class="badge badge-nomination">NOMINATIONS OPEN</span>
+        </div>
+        <p>Position: <strong>{{ election.position }}</strong></p>
+        <p>Nomination closes: {{ election.nomination_end.strftime('%d %b %Y %H:%M') }}</p>
+        {% set already_applied = my_nominations | selectattr('election_id', 'equalto', election.id) | list %}
+        {% if already_applied %}
+            <p>Your status: <span class="badge badge-{{ already_applied[0].status }}">{{ already_applied[0].status.upper() }}</span></p>
+        {% else %}
+            <a href="{{ url_for('candidate.apply_nomination', election_id=election.id) }}" class="btn btn-small">Apply Now</a>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">No elections are currently accepting nominations.</div>
+{% endif %}
+
+<h3>My Nominations</h3>
+{% if my_nominations %}
+<table class="simple-table">
+    <thead>
+        <tr><th>Election</th><th>Applied On</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+        {% for nom in my_nominations %}
+        <tr>
+            <td>{{ nom.election.title }}</td>
+            <td>{{ nom.applied_at.strftime('%d %b %Y') }}</td>
+            <td><span class="badge badge-{{ nom.status }}">{{ nom.status.upper() }}</span></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="empty-state">You haven't applied for any nominations yet.</div>
+{% endif %}
+{% endblock %}

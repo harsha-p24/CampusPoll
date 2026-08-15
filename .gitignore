@@ -1,0 +1,1 @@
+.env *.env !.env.example venv/ .venv/ env/ ENV/ __pycache__/ *.pyc instance/ *.db *.sqlite *.sqlite3 .pytest_cache/ .coverage celerybeat-schedule celerybeat.pid .vscode/ .idea/ *.log 

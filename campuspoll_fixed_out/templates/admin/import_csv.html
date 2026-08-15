@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Import Users - Admin{% endblock %}
+{% block content %}
+<div class="page-header">
+    <a href="{{ url_for('admin.manage_users') }}" class="back-link">← Back to Users</a>
+    <h2>Bulk Import Students via CSV</h2>
+</div>
+
+<div class="form-page" style="margin-top:0; max-width:560px;">
+    <div class="info-box" style="margin-bottom:16px;">
+        <strong>CSV Format Required:</strong><br>
+        <code>name, email, student_id, department, year</code><br><br>
+        <strong>Example:</strong><br>
+        <code>Aryan Sharma, aryan@college.edu, CS2021001, Computer Science, 3rd Year</code>
+        <br><br>
+        <a href="#" class="btn btn-small btn-outline" onclick="downloadSample()">Download Sample CSV</a>
+    </div>
+    <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+            <label>Upload CSV File <span class="required">*</span></label>
+            <input type="file" name="csv_file" accept=".csv" required>
+        </div>
+        <p style="font-size:13px;color:#888;margin-bottom:12px;">
+            ⚠️ Duplicate emails/student IDs will be skipped. Students will be auto-verified.
+        </p>
+        <button type="submit" class="btn btn-full">Import Students</button>
+    </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function downloadSample() {
+    const csv = 'name,email,student_id,department,year\nAryan Sharma,aryan@college.edu,CS2021001,Computer Science,3rd Year\nPriya Patel,priya@college.edu,EC2021002,Electronics,2nd Year';
+    const blob = new Blob([csv], {type:'text/csv'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'sample_students.csv';
+    a.click();
+}
+</script>
+{% endblock %}

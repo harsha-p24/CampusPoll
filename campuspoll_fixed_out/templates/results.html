@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Results - {{ election.title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <a href="{{ url_for('voter.dashboard') }}" class="back-link">← Back to Dashboard</a>
+    <h2>Election Results</h2>
+    <p>{{ election.title }} — <strong>{{ election.position }}</strong></p>
+    <p>Total Votes Cast: <strong id="totalVotes">{{ total_votes }}</strong></p>
+</div>
+
+{% if candidates %}
+<div class="winner-card">
+    <div class="winner-crown">🏆</div>
+    <h3>Winner</h3>
+    <h2>{{ candidates[0].user.name }}</h2>
+    <p>{{ candidates[0].user.department }}</p>
+    <p><strong>{{ candidates[0]._live_vote_count }} votes</strong>
+    {% if total_votes > 0 %}({{ "%.1f"|format(candidates[0]._live_vote_count / total_votes * 100) }}%){% endif %}</p>
+</div>
+
+<h3>All Candidates</h3>
+<table class="results-table">
+    <thead>
+        <tr><th>Rank</th><th>Candidate</th><th>Department</th><th>Votes</th><th>Share</th><th>Bar</th></tr>
+    </thead>
+    <tbody>
+        {% for c in candidates %}
+        {% set pct = (c._live_vote_count / total_votes * 100) if total_votes > 0 else 0 %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td><strong>{{ c.user.name }}</strong></td>
+            <td>{{ c.user.department }}</td>
+            <td class="vote-count" data-cid="{{ c.id }}">{{ c._live_vote_count }}</td>
+            <td>{{ "%.1f"|format(pct) }}%</td>
+            <td>
+                <div class="vote-bar-bg">
+                    <div class="vote-bar" data-cid="{{ c.id }}" style="width:{{ pct }}%"></div>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="chart-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <h3 style="margin:0;">Vote Distribution</h3>
+        <span id="liveIndicator" style="font-size:12px;color:#16a34a;font-weight:600;display:flex;align-items:center;gap:6px;">
+            <span style="width:8px;height:8px;background:currentColor;border-radius:50%;display:inline-block;"></span>
+            LIVE
+        </span>
+    </div>
+    <canvas id="resultsChart" width="500" height="260"></canvas>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+var chart = null;
+
+function buildChart(labels, data) {
+    var ctx = document.getElementById('resultsChart');
+    if (!ctx) return;
+    if (chart) chart.destroy();
+    chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Votes',
+                data: data,
+                backgroundColor: '#4a90a4',
+                borderColor: '#357a8a',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+            animation: { duration: 400 }
+        }
+    });
+}
+
+// Initial chart load
+fetch("{{ url_for('analytics.election_chart_data', election_id=election.id) }}")
+    .then(r => r.json())
+    .then(d => buildChart(d.labels, d.votes));
+
+// WebSocket real-time updates
+var socket = io();
+socket.emit('join_live_results', { election_id: {{ election.id }} });
+
+socket.on('vote_update', function(data) {
+    if (data.election_id !== {{ election.id }}) return;
+
+    // Update total
+    document.getElementById('totalVotes').textContent = data.total;
+
+    // Update table cells + bars
+    var total = data.total || 1;
+    Object.entries(data.counts).forEach(function([cid, info]) {
+        var countEl = document.querySelector('.vote-count[data-cid="' + cid + '"]');
+        if (countEl) countEl.textContent = info.votes;
+        var barEl = document.querySelector('.vote-bar[data-cid="' + cid + '"]');
+        if (barEl) barEl.style.width = ((info.votes / total) * 100) + '%';
+    });
+
+    // Update chart
+    if (chart) {
+        var keys = Object.keys(data.counts);
+        chart.data.labels   = keys.map(k => data.counts[k].name);
+        chart.data.datasets[0].data = keys.map(k => data.counts[k].votes);
+        chart.update('active');
+    }
+
+    // Flash live indicator
+    var ind = document.getElementById('liveIndicator');
+    if (ind) {
+        ind.style.color = '#2563eb';
+        setTimeout(function() { ind.style.color = '#16a34a'; }, 1000);
+    }
+});
+
+socket.on('disconnect', function() {
+    var ind = document.getElementById('liveIndicator');
+    if (ind) ind.innerHTML = '<span style="color:#dc2626">● OFFLINE</span>';
+});
+
+trackEvent('page_view', 'results');
+</script>
+{% endblock %}

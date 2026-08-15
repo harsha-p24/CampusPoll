@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Edit Election{% endblock %}
+{% block content %}
+<div class="page-header">
+    <a href="{{ url_for('admin.dashboard') }}" class="back-link">← Back</a>
+    <h2>Edit Election</h2>
+</div>
+<div class="form-page" style="margin-top:0;max-width:600px;">
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+            <label>Election Title <span class="required">*</span></label>
+            <input type="text" name="title" required value="{{ election.title }}">
+        </div>
+        <div class="form-group">
+            <label>Position <span class="required">*</span></label>
+            <input type="text" name="position" required value="{{ election.position }}">
+        </div>
+        <div class="form-group">
+            <label>Description</label>
+            <textarea name="description" rows="3">{{ election.description or '' }}</textarea>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Nomination Start</label>
+                <input type="datetime-local" name="nomination_start" required
+                       value="{{ election.nomination_start.strftime('%Y-%m-%dT%H:%M') }}">
+            </div>
+            <div class="form-group">
+                <label>Nomination End</label>
+                <input type="datetime-local" name="nomination_end" required
+                       value="{{ election.nomination_end.strftime('%Y-%m-%dT%H:%M') }}">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Voting Start</label>
+                <input type="datetime-local" name="voting_start" required
+                       value="{{ election.voting_start.strftime('%Y-%m-%dT%H:%M') }}">
+            </div>
+            <div class="form-group">
+                <label>Voting End</label>
+                <input type="datetime-local" name="voting_end" required
+                       value="{{ election.voting_end.strftime('%Y-%m-%dT%H:%M') }}">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-full">Save Changes</button>
+    </form>
+</div>
+{% endblock %}

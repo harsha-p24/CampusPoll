@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard - CampusPoll{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>Admin Dashboard</h2>
+    <a href="{{ url_for('admin.create_election') }}" class="btn">+ New Election</a>
+</div>
+
+<div class="stats-grid">
+    {% for num, label, highlight in [
+        (total_users, 'Registered Users', False),
+        (total_elections, 'Total Elections', False),
+        (total_votes, 'Votes Cast', False),
+        (pending_nominations, 'Pending Nominations', True),
+    ] %}
+    <div class="stat-card {{ 'highlight' if highlight }}">
+        <div class="stat-num">{{ num }}</div>
+        <div class="stat-label">{{ label }}</div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Announcement Form -->
+<details style="margin-bottom:20px;">
+    <summary style="cursor:pointer;font-weight:bold;font-size:14px;color:#333;padding:8px 0;">📢 Post Announcement</summary>
+    <div style="background:#fff;border:1px solid #ddd;border-radius:4px;padding:16px;margin-top:8px;">
+        <form method="POST" action="{{ url_for('admin.create_announcement') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label>Title</label>
+                <input type="text" name="title" required placeholder="Announcement title" maxlength="200">
+            </div>
+            <div class="form-group">
+                <label>Message</label>
+                <textarea name="message" rows="2" required placeholder="Announcement message" maxlength="1000"></textarea>
+            </div>
+            <button type="submit" class="btn btn-small">Post</button>
+        </form>
+    </div>
+</details>
+
+<!-- Current Voting Dashboard: admin always sees the active election live -->
+<div class="chart-box" style="margin-bottom:20px;"
+     {% if current_election %}
+     data-election-id="{{ current_election.id }}"
+     data-voting-start="{{ current_election.voting_start.isoformat() }}"
+     data-voting-end="{{ current_election.voting_end.isoformat() }}"
+     data-results-published="{{ current_election.results_published|lower }}"
+     {% endif %}>
+    <h3 style="margin-top:0;">🗳️ Current Voting</h3>
+    {% if current_election %}
+        <p>
+            <strong>{{ current_election.title }}</strong> — {{ current_election.position }}<br>
+            Start: {{ current_election.voting_start.strftime('%d %b %Y %H:%M') }} &nbsp;|&nbsp;
+            End: {{ current_election.voting_end.strftime('%d %b %Y %H:%M') }} &nbsp;|&nbsp;
+            <span class="badge badge-{{ current_election.live_status }}">{{ current_election.live_status.upper() }}</span>
+        </p>
+        <p>Total Votes Cast: <strong>{{ current_total_votes }}</strong>
+           <span style="font-size:12px;color:#16a34a;font-weight:600;">● LIVE — visible only to you until results are announced</span></p>
+        {% if current_candidates %}
+        <table class="simple-table">
+            <thead><tr><th>Candidate</th><th>Department</th><th>Live Votes</th></tr></thead>
+            <tbody>
+                {% for c in current_candidates %}
+                <tr>
+                    <td>{{ c.user.name }}</td>
+                    <td>{{ c.user.department }}</td>
+                    <td class="vote-count" data-cid="{{ c.id }}">{{ c._live_vote_count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-state">No approved candidates yet for this election.</p>
+        {% endif %}
+    {% else %}
+        <p class="empty-state">No election is currently active. Create one or wait for a scheduled election's voting window to open.</p>
+    {% endif %}
+</div>
+
+{% if announcements %}
+<div style="margin-bottom:20px;">
+    {% for a in announcements %}
+    <div class="announcement-bar" style="display:flex;justify-content:space-between;align-items:center;">
+        <div><strong>{{ a.title }}</strong> — {{ a.message[:100] }}{% if a.message|length > 100 %}…{% endif %}</div>
+        <form method="POST" action="{{ url_for('admin.delete_announcement', ann_id=a.id) }}" style="margin:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn-tiny" onclick="return confirm('Delete?')">✕</button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<h3>Elections</h3>
+<table class="simple-table">
+    <thead>
+        <tr><th>Title</th><th>Position</th><th>Voting Period</th><th>Status</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+        {% for e in elections %}
+        <tr>
+            <td><strong>{{ e.title }}</strong></td>
+            <td>{{ e.position }}</td>
+            <td>{{ e.voting_start.strftime('%d %b') }} – {{ e.voting_end.strftime('%d %b %Y') }}</td>
+            <td><span class="badge badge-{{ e.live_status }}">{{ e.live_status.upper() }}</span></td>
+            <td style="display:flex;gap:6px;flex-wrap:wrap;">
+                {% if e.live_status not in ('voting', 'closed', 'completed') %}
+                <a href="{{ url_for('admin.edit_election', election_id=e.id) }}" class="btn btn-small btn-outline">Edit</a>
+                <form method="POST" action="{{ url_for('admin.delete_election', election_id=e.id) }}" style="margin:0;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-small btn-danger" onclick="return confirm('Delete election?')">Delete</button>
+                </form>
+                {% endif %}
+                {% if e.live_status == 'voting' %}
+                <a href="{{ url_for('admin.notify_voting_open', election_id=e.id) }}" class="btn btn-small btn-outline">Notify Voters</a>
+                {% endif %}
+                {% if not e.results_published and now > e.voting_end %}
+                <a href="{{ url_for('admin.publish_results', election_id=e.id) }}"
+                   class="btn btn-small" onclick="return confirm('Publish results?')">Publish Results</a>
+                {% endif %}
+                {% if e.results_published %}
+                <a href="{{ url_for('admin.export_results_pdf', election_id=e.id) }}" class="btn btn-small btn-outline">PDF</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h3>Recent Audit Log</h3>
+<table class="simple-table">
+    <thead><tr><th>Time</th><th>Action</th><th>Details</th><th>IP</th></tr></thead>
+    <tbody>
+        {% for log in recent_logs %}
+        <tr>
+            <td>{{ log.timestamp.strftime('%d %b %H:%M') }}</td>
+            <td><code>{{ log.action }}</code></td>
+            <td>{{ log.details or '—' }}</td>
+            <td>{{ log.ip_address or '—' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{{ url_for('admin.audit_log') }}" class="btn btn-small btn-outline" style="margin-top:8px;">View Full Log</a>
+{% endblock %}
+{% block scripts %}
+{% if current_election %}
+<script>
+// Live-update the "Current Voting" candidate counts as votes come in,
+// without needing election_realtime.js's full-page reload (that one only
+// fires on status/results changes, not on every single vote).
+(function () {
+    if (typeof io !== 'function') return;
+    var socket = io();
+    var electionId = {{ current_election.id }};
+    socket.on('connect', function () { socket.emit('join_live_results', { election_id: electionId }); });
+    socket.on('vote_update', function (data) {
+        if (data.election_id !== electionId) return;
+        Object.entries(data.counts).forEach(function ([cid, info]) {
+            var cell = document.querySelector('.vote-count[data-cid="' + cid + '"]');
+            if (cell) cell.textContent = info.votes;
+        });
+    });
+})();
+</script>
+{% endif %}
+{% endblock %}

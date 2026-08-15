@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CampusPoll{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
+        <div class="nav-container">
+            <a href="{{ url_for('auth.index') }}" class="nav-brand">🗳️ CampusPoll</a>
+            <div class="nav-links">
+                {% if current_user.is_authenticated %}
+                    {% if current_user.role == 'admin' %}
+                        <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+                        <a href="{{ url_for('admin.manage_nominations') }}">Nominations</a>
+                        <a href="{{ url_for('admin.manage_users') }}">Users</a>
+                        <a href="{{ url_for('analytics.dashboard') }}">Analytics</a>
+                        <a href="{{ url_for('admin.audit_log') }}">Audit Log</a>
+                        <a href="{{ url_for('admin.fraud_signals') }}">🛡️ Fraud</a>
+                    {% else %}
+                        <a href="{{ url_for('voter.dashboard') }}">Dashboard</a>
+                        <a href="{{ url_for('candidate.nominations') }}">Apply for Nomination</a>
+                        <a href="{{ url_for('voter.profile') }}">Profile</a>
+                    {% endif %}
+                    <!-- Notification Bell -->
+                    <div class="notif-bell" id="notifBell" role="button" aria-label="Notifications" aria-haspopup="true" tabindex="0">
+                        🔔 <span class="notif-count" id="notifCount" style="display:none">0</span>
+                        <div class="notif-dropdown" id="notifDropdown">
+                            <div class="notif-header">
+                                Notifications
+                                <button onclick="markAllRead()" class="btn-tiny">Mark all read</button>
+                            </div>
+                            <div id="notifList"><p style="padding:12px;color:#888;font-size:13px;">No notifications</p></div>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('auth.logout') }}" class="btn-small">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}">Login</a>
+                    <a href="{{ url_for('auth.register') }}" class="btn-small">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main id="main-content" class="container" role="main">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer" role="contentinfo">
+        <p>CampusPoll &copy; 2024 — Digital Student Election Platform</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/election_realtime.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

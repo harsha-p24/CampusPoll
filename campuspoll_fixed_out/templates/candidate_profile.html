@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ candidate.user.name }} - Candidate Profile{% endblock %}
+{% block content %}
+<div class="page-header">
+    <a href="javascript:history.back()" class="back-link">← Back</a>
+    <h2>Candidate Profile</h2>
+</div>
+
+<div class="profile-card">
+    <div class="profile-avatar">{{ candidate.user.name[0].upper() }}</div>
+    <div class="profile-info">
+        <h3>{{ candidate.user.name }}</h3>
+        <p>🎓 {{ candidate.user.department }} | {{ candidate.user.year }}</p>
+        <p>🪪 {{ candidate.user.student_id }}</p>
+        <p>🏷️ Contesting for: <strong>{{ candidate.election.position }}</strong></p>
+        <p>📋 Election: {{ candidate.election.title }}</p>
+    </div>
+</div>
+
+<div class="manifesto-box">
+    <h3>Manifesto</h3>
+    <p>{{ candidate.manifesto }}</p>
+</div>
+{% endblock %}

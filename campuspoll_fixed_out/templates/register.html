@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Register - CampusPoll{% endblock %}
+{% block content %}
+<div class="form-page">
+    <h2>Create Account</h2>
+    <p class="form-sub">Register to participate in student elections</p>
+    <form method="POST" action="{{ url_for('auth.register') }}" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" name="name" required minlength="2" maxlength="100"
+                   value="{{ form.get('name','') }}" placeholder="Enter your full name">
+        </div>
+        <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" name="email" required
+                   value="{{ form.get('email','') }}" placeholder="your@college.edu">
+        </div>
+        <div class="form-group">
+            <label>Student ID</label>
+            <input type="text" name="student_id" required minlength="4" maxlength="20"
+                   value="{{ form.get('student_id','') }}" placeholder="e.g. CS2021001">
+        </div>
+        <div class="form-group">
+            <label>Department</label>
+            <select name="department" required>
+                <option value="">Select Department</option>
+                {% for d in ['Computer Science','Electronics','Mechanical','Civil',
+                             'Business Administration','Arts & Humanities','Science','Other'] %}
+                <option value="{{ d }}" {{ 'selected' if form.get('department')==d }}>{{ d }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Year of Study</label>
+            <select name="year" required>
+                <option value="">Select Year</option>
+                {% for y in ['1st Year','2nd Year','3rd Year','4th Year'] %}
+                <option value="{{ y }}" {{ 'selected' if form.get('year')==y }}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" name="password" required minlength="8" placeholder="Min 8 chars, upper+lower+number+special">
+            <div class="pw-strength">
+                <div class="pw-bar-bg"><div class="pw-bar"></div></div>
+                <span class="pw-hint">Enter a password</span>
+            </div>
+        </div>
+        <!-- Honeypot: hidden from real users, filled by bots -->
+        <div style="display:none" aria-hidden="true">
+            <input type="text" name="website" tabindex="-1" autocomplete="off">
+        </div>
+        <button type="submit" class="btn btn-full">Create Account</button>
+    </form>
+    <p class="form-footer">Already have an account? <a href="{{ url_for('auth.login') }}">Login here</a></p>
+</div>
+{% endblock %}

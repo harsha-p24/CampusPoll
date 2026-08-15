@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Apply for Nomination - {{ election.title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <a href="{{ url_for('candidate.nominations') }}" class="back-link">← Back</a>
+    <h2>Apply for Nomination</h2>
+    <p>{{ election.title }} — <strong>{{ election.position }}</strong></p>
+</div>
+<div class="form-page" style="margin-top:0;">
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+            <label>Your Name</label>
+            <input type="text" value="{{ current_user.name }}" disabled>
+        </div>
+        <div class="form-group">
+            <label>Department</label>
+            <input type="text" value="{{ current_user.department }}" disabled>
+        </div>
+        <div class="form-group">
+            <label>Position Contesting For</label>
+            <input type="text" value="{{ election.position }}" disabled>
+        </div>
+        <div class="form-group">
+            <label>Your Manifesto <span class="required">*</span></label>
+            <textarea name="manifesto" rows="6" required minlength="50" maxlength="2000"
+                placeholder="Why should students vote for you? Minimum 50 characters."></textarea>
+            <span class="field-error" id="manifesto-error"></span>
+        </div>
+        <button type="submit" class="btn btn-full">Submit Nomination</button>
+        <p class="vote-note">⚠️ Your nomination will be reviewed by admin before approval.</p>
+    </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+var ta = document.querySelector('textarea[name="manifesto"]');
+if (ta) {
+    ta.addEventListener('input', function() {
+        var err = document.getElementById('manifesto-error');
+        if (ta.value.length < 50) {
+            err.textContent = (50 - ta.value.length) + ' more characters needed';
+        } else {
+            err.textContent = '✅ ' + ta.value.length + ' characters';
+            err.style.color = '#2e7d32';
+        }
+    });
+}
+</script>
+{% endblock %}

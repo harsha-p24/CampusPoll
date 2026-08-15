@@ -1,0 +1,27 @@
+# Systemd service for CampusPoll Gunicorn
+# Place at: /etc/systemd/system/campuspoll.service
+# Enable: sudo systemctl enable campuspoll && sudo systemctl start campuspoll
+
+[Unit]
+Description=CampusPoll Flask Application
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/campuspoll
+EnvironmentFile=/var/www/campuspoll/.env
+ExecStart=/var/www/campuspoll/venv/bin/gunicorn \
+    --bind 127.0.0.1:5000 \
+    --workers 4 \
+    --timeout 120 \
+    --log-level info \
+    --access-logfile /var/log/campuspoll/access.log \
+    --error-logfile  /var/log/campuspoll/error.log \
+    run:app
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

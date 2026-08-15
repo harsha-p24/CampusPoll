@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: campuspoll_redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: campuspoll_web
+    ports:
+      - "5000:5000"
+    env_file: .env
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - RATELIMIT_STORAGE_URL=redis://redis:6379/1
+      - USE_CELERY=true
+    volumes:
+      - campuspoll_data:/app/instance
+      - campuspoll_uploads:/app/static/images
+      - campuspoll_logs:/app/logs
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD","python","-c","import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  celery_worker:
+    build: .
+    container_name: campuspoll_celery
+    command: celery -A celery_app.celery worker -Q default,emails,maintenance -c 4 --loglevel=info
+    env_file: .env
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    volumes:
+      - campuspoll_data:/app/instance
+      - campuspoll_logs:/app/logs
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  celery_beat:
+    build: .
+    container_name: campuspoll_beat
+    command: celery -A celery_app.celery beat --loglevel=info
+    env_file: .env
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    volumes:
+      - campuspoll_data:/app/instance
+      - campuspoll_logs:/app/logs
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: campuspoll_prometheus
+    volumes:
+      - ./deploy/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: campuspoll_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/grafana_provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  campuspoll_data:
+  campuspoll_uploads:
+  campuspoll_logs:
+  grafana_data:

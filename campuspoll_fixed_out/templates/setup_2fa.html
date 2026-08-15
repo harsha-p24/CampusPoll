@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Setup 2FA{% endblock %}
+{% block content %}
+<div class="form-page" style="max-width:520px;">
+    <h2>Set Up Two-Factor Authentication</h2>
+    <p class="form-sub">Scan the QR code with Google Authenticator or Authy</p>
+    <div style="text-align:center;margin:20px 0;">
+        <img src="data:image/png;base64,{{ qr }}" alt="QR Code" style="width:200px;height:200px;border:1px solid #ddd;padding:8px;">
+    </div>
+    <p style="font-size:13px;color:#666;text-align:center;">Can't scan? Enter this key manually:<br>
+    <code style="font-size:14px;letter-spacing:2px;">{{ secret }}</code></p>
+    <form method="POST" style="margin-top:20px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+            <label>Enter the 6-digit code to confirm setup</label>
+            <input type="text" name="token" required placeholder="000000" maxlength="6"
+                   pattern="[0-9]{6}" autocomplete="one-time-code"
+                   style="letter-spacing:6px;font-size:18px;text-align:center;">
+        </div>
+        <button type="submit" class="btn btn-full">Enable 2FA</button>
+    </form>
+    <p class="form-footer"><a href="{{ url_for('voter.profile') }}">Cancel</a></p>
+</div>
+{% endblock %}

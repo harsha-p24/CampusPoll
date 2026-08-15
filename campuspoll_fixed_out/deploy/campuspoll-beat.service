@@ -1,0 +1,21 @@
+# Systemd service for Celery Beat scheduler
+# Place at: /etc/systemd/system/campuspoll-beat.service
+
+[Unit]
+Description=CampusPoll Celery Beat
+After=network.target redis.service
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/campuspoll
+EnvironmentFile=/var/www/campuspoll/.env
+ExecStart=/var/www/campuspoll/venv/bin/celery \
+    -A celery_app.celery beat \
+    --loglevel=info \
+    --logfile=/var/log/campuspoll/beat.log
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

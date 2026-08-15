@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Audit Log - Admin{% endblock %}
+{% block content %}
+<div class="page-header">
+    <a href="{{ url_for('admin.dashboard') }}" class="back-link">← Back</a>
+    <h2>Audit Log</h2>
+    <p>Complete system action history</p>
+</div>
+<form method="GET" class="search-bar">
+    <input type="text" name="search" value="{{ search }}" placeholder="Search action...">
+    <button type="submit" class="btn btn-small">Search</button>
+    {% if search %}<a href="{{ url_for('admin.audit_log') }}" class="btn btn-small btn-outline">Clear</a>{% endif %}
+</form>
+<table class="simple-table">
+    <thead>
+        <tr><th>Timestamp</th><th>User ID</th><th>Action</th><th>Details</th><th>IP</th></tr>
+    </thead>
+    <tbody>
+        {% for log in logs.items %}
+        <tr>
+            <td>{{ log.timestamp.strftime('%d %b %Y %H:%M:%S') }}</td>
+            <td>{{ log.user_id or 'Guest' }}</td>
+            <td><code>{{ log.action }}</code></td>
+            <td>{{ log.details or '—' }}</td>
+            <td>{{ log.ip_address or '—' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<div class="pagination">
+    {% if logs.has_prev %}
+        <a href="{{ url_for('admin.audit_log', page=logs.prev_num, search=search) }}">← Prev</a>
+    {% else %}<span class="disabled">← Prev</span>{% endif %}
+    {% for p in logs.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if p %}
+            <a href="{{ url_for('admin.audit_log', page=p, search=search) }}" class="{{ 'current' if p == logs.page else '' }}">{{ p }}</a>
+        {% else %}<span>…</span>{% endif %}
+    {% endfor %}
+    {% if logs.has_next %}
+        <a href="{{ url_for('admin.audit_log', page=logs.next_num, search=search) }}">Next →</a>
+    {% else %}<span class="disabled">Next →</span>{% endif %}
+</div>
+{% endblock %}

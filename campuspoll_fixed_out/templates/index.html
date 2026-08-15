@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}CampusPoll - Home{% endblock %}
+{% block content %}
+
+{% if announcements %}
+<div style="margin-bottom:16px;">
+    {% for a in announcements %}
+    <div class="announcement-bar">
+        📢 <strong>{{ a.title }}:</strong> {{ a.message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="hero">
+    <h1>🗳️ CampusPoll</h1>
+    <p class="hero-sub">Digital Student Election Platform</p>
+    <p class="hero-desc">A transparent, secure, and easy-to-use platform for conducting college elections online.</p>
+    <div class="hero-actions">
+        <a href="{{ url_for('auth.register') }}" class="btn">Register to Vote</a>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-outline">Login</a>
+    </div>
+</div>
+
+<div class="features-grid">
+    {% for icon, title, desc in [
+        ('🔐','Secure Voting','Each student votes only once. Duplicate prevention ensures fairness.'),
+        ('📊','Real-time Results','Live vote counts and charts once results are published.'),
+        ('🙋','Easy Nomination','Apply for candidacy with your manifesto during the nomination period.'),
+        ('📋','Admin Control','Full election lifecycle from scheduling to result announcement.'),
+    ] %}
+    <div class="feature-card">
+        <span class="feature-icon">{{ icon }}</span>
+        <h3>{{ title }}</h3>
+        <p>{{ desc }}</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

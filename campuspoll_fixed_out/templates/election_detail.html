@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}{{ election.title }} - CampusPoll{% endblock %}
+{% block content %}
+<div class="page-header" data-election-id="{{ election.id }}"
+     data-voting-start="{{ election.voting_start.isoformat() }}"
+     data-voting-end="{{ election.voting_end.isoformat() }}"
+     data-results-published="{{ election.results_published|lower }}">
+    <a href="{{ url_for('voter.dashboard') }}" class="back-link">← Back to Dashboard</a>
+    <h2>{{ election.title }}</h2>
+    <p>Position: <strong>{{ election.position }}</strong></p>
+    {% if election.description %}<p>{{ election.description }}</p>{% endif %}
+    <span class="badge badge-{{ election.live_status }}">{{ election.live_status.upper() }}</span>
+</div>
+
+{% if already_voted %}
+<div class="alert alert-success">✅ You have already cast your vote in this election.</div>
+{% endif %}
+
+{% if can_vote_now and not already_voted %}
+<div class="status-banner banner-voting">🗳️ Voting is OPEN — Select a candidate below and cast your vote
+    <span class="countdown" data-end="{{ election.voting_end.isoformat() }}" data-mode="closes"></span>
+</div>
+{% elif not can_vote_now and election.live_status == 'upcoming' %}
+<div class="status-banner banner-upcoming">⏳ Voting has not started yet
+    <span class="countdown" data-end="{{ election.voting_start.isoformat() }}" data-mode="opens"></span>
+</div>
+{% elif not can_vote_now and not already_voted and election.live_status in ('closed', 'completed') %}
+<div class="status-banner banner-closed">🔒 Voting has ended for this election.</div>
+{% endif %}
+
+<h3>Candidates ({{ candidates|length }})</h3>
+
+{% if candidates %}
+<form method="POST" action="{{ url_for('voter.cast_vote_route', election_id=election.id) }}" aria-label="Voting form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <fieldset>
+    <legend class="sr-only">Select a candidate for {{ election.position }}</legend>
+    <div class="candidates-list">
+        {% for c in candidates %}
+        <div class="candidate-card">
+            <div class="candidate-info">
+                <div class="candidate-avatar">{{ c.user.name[0].upper() }}</div>
+                <div>
+                    <h4>{{ c.user.name }}</h4>
+                    <p>{{ c.user.department }} | {{ c.user.year }}</p>
+                    <p class="candidate-id">ID: {{ c.user.student_id }}</p>
+                </div>
+                {% if can_vote_now and not already_voted and c.user_id != current_user.id %}
+                <div style="margin-left:auto;">
+                    <input type="radio" name="candidate_id" value="{{ c.id }}" required style="width:18px;height:18px;" aria-label="Vote for {{ c.user.name }}">
+                </div>
+                {% endif %}
+            </div>
+            <div class="candidate-manifesto">
+                <strong>Manifesto:</strong>
+                <p>{{ c.manifesto }}</p>
+            </div>
+            <a href="{{ url_for('candidate.candidate_profile', candidate_id=c.id) }}" class="btn btn-small btn-outline">View Profile</a>
+        </div>
+        {% endfor %}
+    </div>
+    </fieldset>
+    {% if can_vote_now and not already_voted %}
+    <div class="vote-submit">
+        <button type="submit" class="btn" onclick="return confirm('Cast your vote? This cannot be undone.')">🗳️ Cast My Vote</button>
+        <p class="vote-note">⚠️ Your vote is final and cannot be changed.</p>
+    </div>
+    {% endif %}
+</form>
+{% else %}
+<div class="empty-state">No approved candidates yet for this election.</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,54 @@
+# Core Flask
+Flask>=3.0.0
+Flask-SQLAlchemy>=3.1.1
+Flask-Login>=0.6.3
+Flask-Mail>=0.9.1
+Flask-WTF>=1.2.1
+Flask-Limiter>=3.5.0
+Flask-Migrate>=4.0.5
+Werkzeug>=3.0.1
+SQLAlchemy>=2.0.23
+itsdangerous>=2.1.2
+
+# Utilities
+reportlab>=4.0.8
+APScheduler>=3.10.4
+python-dotenv>=1.0.1
+Pillow>=10.0.0
+pyotp>=2.9.0
+qrcode>=7.4.2
+bleach>=6.1.0
+email-validator>=2.2.0
+argon2-cffi>=23.1.0
+PyJWT>=2.8.0
+
+# Real-time
+flask-socketio>=5.3.6
+# eventlet is optional — app uses async_mode='threading' which works without it.
+# Install eventlet only for production Linux deployments.
+# eventlet>=0.35.2
+
+# Database (optional: only needed for PostgreSQL)
+psycopg2-binary>=2.9.9
+
+# Task queue (optional: only needed if USE_CELERY=true)
+celery>=5.3.6
+redis>=5.0.1
+
+# Monitoring (optional)
+sentry-sdk[flask]>=1.40.6
+prometheus-flask-exporter>=0.23.0
+
+# ML fraud detection
+scikit-learn>=1.4.0
+numpy>=1.26.4
+
+# Dev / testing
+pytest>=7.4.4
+pytest-flask>=1.3.0
+pytest-cov>=4.1.0
+bandit>=1.7.7
+locust>=2.23.1
+
+# Production server (Linux only - not needed on Windows)
+# gunicorn>=21.2.0

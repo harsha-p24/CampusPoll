@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Fraud Signals - Admin{% endblock %}
+{% block content %}
+<div class="page-header">
+    <a href="{{ url_for('admin.dashboard') }}" class="back-link">← Back</a>
+    <h2>🛡️ Fraud Detection Signals</h2>
+</div>
+
+<div class="stats-grid" style="margin-bottom:20px;">
+    <div class="stat-card">
+        <div class="stat-num" style="color:#f59e0b;">{{ total_flagged }}</div>
+        <div class="stat-label">Flagged Votes</div>
+    </div>
+    <div class="stat-card highlight">
+        <div class="stat-num" style="color:#dc2626;">{{ total_blocked }}</div>
+        <div class="stat-label">Blocked Votes</div>
+    </div>
+</div>
+
+{% if signals.items %}
+<table class="simple-table">
+    <thead>
+        <tr>
+            <th>Time</th><th>Voter</th><th>Election</th>
+            <th>Risk Score</th><th>Flags</th><th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in signals.items %}
+        <tr>
+            <td>{{ s.created_at.strftime('%d %b %H:%M') }}</td>
+            <td>{{ s.voter.name if s.voter else 'Unknown' }}</td>
+            <td>{{ s.election_id }}</td>
+            <td>
+                <div class="vote-bar-bg" style="min-width:80px;">
+                    <div class="vote-bar" style="width:{{ (s.risk_score*100)|round }}%;
+                         background:{{ '#dc2626' if s.risk_score > 0.75 else '#f59e0b' }};">
+                    </div>
+                </div>
+                {{ '%.2f'|format(s.risk_score) }}
+            </td>
+            <td style="font-size:12px;color:#666;">{{ s.flags or '—' }}</td>
+            <td>
+                <span class="badge {{ 'badge-rejected' if s.action=='block' else 'badge-pending' }}">
+                    {{ s.action.upper() }}
+                </span>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="pagination">
+    {% if signals.has_prev %}
+        <a href="{{ url_for('admin.fraud_signals', page=signals.prev_num) }}">← Prev</a>
+    {% endif %}
+    <span class="current">{{ signals.page }} / {{ signals.pages }}</span>
+    {% if signals.has_next %}
+        <a href="{{ url_for('admin.fraud_signals', page=signals.next_num) }}">Next →</a>
+    {% endif %}
+</div>
+{% else %}
+<div class="empty-state">No fraud signals detected. ✅</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Manage Nominations - Admin{% endblock %}
+{% block content %}
+<div class="page-header">
+    <a href="{{ url_for('admin.dashboard') }}" class="back-link">← Back</a>
+    <h2>Manage Nominations</h2>
+</div>
+
+<h3>Pending Nominations ({{ pending.total }})</h3>
+{% if pending %}
+<div class="nomination-list">
+    {% for nom in pending %}
+    <div class="nomination-card">
+        <div class="nom-header">
+            <div>
+                <strong>{{ nom.student.name }}</strong>
+                <span class="text-muted"> — {{ nom.student.department }}, {{ nom.student.year }}</span>
+            </div>
+            <span class="badge badge-pending">PENDING</span>
+        </div>
+        <p>Election: <strong>{{ nom.election.title }}</strong> ({{ nom.election.position }})</p>
+        <p>Applied: {{ nom.applied_at.strftime('%d %b %Y %H:%M') }}</p>
+        <div class="manifesto-preview">
+            <strong>Manifesto:</strong> {{ nom.manifesto[:200] }}{% if nom.manifesto|length > 200 %}...{% endif %}
+        </div>
+        <div class="nom-actions">
+            <a href="{{ url_for('admin.approve_nomination', nom_id=nom.id) }}"
+               class="btn btn-small"
+               onclick="return confirm('Approve nomination for {{ nom.student.name }}?')">✅ Approve</a>
+            <a href="{{ url_for('admin.reject_nomination', nom_id=nom.id) }}"
+               class="btn btn-small btn-danger"
+               onclick="return confirm('Reject nomination for {{ nom.student.name }}?')">❌ Reject</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">No pending nominations.</div>
+{% endif %}
+
+<h3>Recently Reviewed</h3>
+{% if reviewed %}
+<table class="simple-table">
+    <thead>
+        <tr><th>Student</th><th>Election</th><th>Status</th><th>Reviewed</th></tr>
+    </thead>
+    <tbody>
+        {% for nom in reviewed %}
+        <tr>
+            <td>{{ nom.student.name }}</td>
+            <td>{{ nom.election.title }}</td>
+            <td><span class="badge badge-{{ nom.status }}">{{ nom.status.upper() }}</span></td>
+            <td>{{ nom.reviewed_at.strftime('%d %b %Y') if nom.reviewed_at else '—' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="empty-state">No reviewed nominations yet.</div>
+{% endif %}
+{% endblock %}
