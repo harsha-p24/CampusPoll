@@ -1,0 +1,17 @@
+.env
+*.env
+!.env.example
+venv/
+.venv/
+instance/
+__pycache__/
+*.pyc
+*.db
+*.sqlite
+*.sqlite3
+.pytest_cache/
+celerybeat-schedule
+celerybeat.pid
+.vscode/
+.idea/
+*.log
